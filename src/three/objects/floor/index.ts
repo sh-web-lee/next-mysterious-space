@@ -1,4 +1,10 @@
-import { Mesh, PlaneGeometry, RepeatWrapping, ShaderMaterial, Texture } from "three";
+import {
+  Mesh,
+  PlaneGeometry,
+  RepeatWrapping,
+  ShaderMaterial,
+  Texture,
+} from "three";
 import { sceneGroup } from "@/three/core/group";
 import { loadSources } from "@/utils/loadsources";
 import { camera } from "@/three/core/camera";

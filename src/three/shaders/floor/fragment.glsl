@@ -27,7 +27,7 @@ void main() {
   vec2 blend = macroFrac * macroFrac * (3.0 - 2.0 * macroFrac);
 
   // Per-cell random angle (0, 90, 180, 270 degrees) + small jitter
-  float texScale = 0.4;
+  float texScale = 1.6;
   vec2 baseUV = vWorldPosition.xz * texScale;
 
   // Helper: quarter-turn step + jitter to break alignment even when rotations match

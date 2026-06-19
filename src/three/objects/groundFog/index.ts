@@ -11,14 +11,14 @@ const CLOUD_PARAMS = {
   density: 0.8,
   color: "#d5cfc3",
   turbulence: 0.5,
-  scale: 1,
+  scale: 0.55,
   count: 8,
 };
 
 // ── Cluster centres (ground-level mist around the temple) ──
 const CLUSTER_CENTERS = [
-  { x: 1, y: 0.35, z: 1.4 },
-  { x: -1, y: 0.35, z: 1.4 },
+  { x: 1, y: 0.1, z: 1.4 },
+  { x: -1, y: 0.1, z: 1.4 },
 ];
 
 // ── Per-puff runtime state ────────────────────────────
@@ -45,17 +45,15 @@ const GEO_CACHE: Record<string, PlaneGeometry> = {};
 
 function getGeometry(size: number): PlaneGeometry {
   const key = (Math.round(size * 2) / 2).toFixed(1);
-  if (!GEO_CACHE[key]) GEO_CACHE[key] = new PlaneGeometry(size * 1.1, size);
+  if (!GEO_CACHE[key]) GEO_CACHE[key] = new PlaneGeometry(size * 2, size * 0.5);
   return GEO_CACHE[key];
 }
 
 class GroundFog {
   private puffs: PuffState[] = [];
   private sharedMaterial: MeshBasicMaterial | null = null;
-  private startTime = 0;
-  private driftRadius = 0;
-  private ticker: (() => void) | null = null;
   private cloudTexture: Texture | null = null;
+  private ticker: (() => void) | null = null;
 
   init() {
     // ── Get cloud texture from loaded sources ─────────
@@ -66,8 +64,6 @@ class GroundFog {
     }
 
     const params = CLOUD_PARAMS;
-    this.startTime = performance.now() / 1000;
-    this.driftRadius = params.scale * 2.2;
 
     // ── Shared template material ──────────────────────
     this.sharedMaterial = new MeshBasicMaterial({
@@ -92,16 +88,16 @@ class GroundFog {
       }
     }
 
-    // ── Self-managed tick ─────────────────────────────
+    // ── Billboard-only tick (no drift/sway/breath) ────
     this.ticker = this.#tick.bind(this);
-    gsap.ticker.add(this.ticker);
+    gsap.ticker.add(this.ticker!);
   }
 
   private createPuff(
     center: { x: number; y: number; z: number },
     params: typeof CLOUD_PARAMS,
   ): PuffState {
-    const size = rand(params.scale * 0.8, params.scale * 1.4);
+    const size = params.scale * (0.7 + Math.random() * 0.8);
     const geometry = getGeometry(size);
 
     // Clone so each puff gets its own opacity
@@ -138,82 +134,10 @@ class GroundFog {
   }
 
   #tick() {
-    if (!this.sharedMaterial || !camera.instance) return;
-
-    const elapsed = performance.now() / 1000 - this.startTime;
-    const params = CLOUD_PARAMS;
+    if (!camera.instance) return;
     const camPos = camera.instance.position;
-
     for (const puff of this.puffs) {
-      // ── Drift ───────────────────────────────────────
-      const dynamicAngle =
-        puff.driftAngle + Math.sin(elapsed * 0.16 + puff.breathPhase) * 0.22;
-      const driftDist = puff.driftSpeed * (1 / 60);
-      puff.baseX += Math.cos(dynamicAngle) * driftDist;
-      puff.baseZ += Math.sin(dynamicAngle) * driftDist;
-
-      // ── Nearest cluster centre ──────────────────────
-      let nearest = CLUSTER_CENTERS[0];
-      let minD = Infinity;
-      for (const c of CLUSTER_CENTERS) {
-        const d = (puff.baseX - c.x) ** 2 + (puff.baseZ - c.z) ** 2;
-        if (d < minD) {
-          minD = d;
-          nearest = c;
-        }
-      }
-      const dist = Math.sqrt(minD);
-
-      // ── Border fade ─────────────────────────────────
-      let borderFade = 1.0;
-      if (dist > this.driftRadius * 0.5) {
-        const t = Math.max(
-          0,
-          Math.min(
-            1,
-            (dist - this.driftRadius * 0.5) / (this.driftRadius * 0.5),
-          ),
-        );
-        borderFade = 1.0 - t * t * (3.0 - 2.0 * t);
-      }
-
-      // ── Respawn ─────────────────────────────────────
-      if (dist >= this.driftRadius) {
-        const a = rand(0, Math.PI * 2);
-        const r = rand(0, this.driftRadius * 0.3);
-        puff.baseX = nearest.x + Math.cos(a) * r;
-        puff.baseZ = nearest.z + Math.sin(a) * r;
-        puff.baseY = nearest.y + rand(-0.6, 0.6);
-        puff.driftAngle = rand(0, Math.PI * 2);
-        borderFade = 0.0;
-      }
-
-      // ── Vertical sway ───────────────────────────────
-      const currentY =
-        puff.baseY +
-        Math.sin(elapsed * puff.ySwaySpeed + puff.breathPhase) * puff.ySwayAmt;
-
-      // ── Breathing opacity ───────────────────────────
-      const breath =
-        Math.sin(
-          (elapsed / puff.breathPeriod) * Math.PI * 2 + puff.breathPhase,
-        ) * 0.25;
-      const finalOpacity = Math.max(
-        0.01,
-        (puff.baseOpacity + breath * puff.baseOpacity) *
-          borderFade *
-          params.opacity,
-      );
-
-      // ── Roll ────────────────────────────────────────
-      puff.mesh.rotation.z += puff.rollSpeed * (1 / 60);
-
-      // ── Apply position + billboard ──────────────────
-      puff.mesh.position.set(puff.baseX, currentY, puff.baseZ);
-      if (camPos) puff.mesh.lookAt(camPos);
-
-      // ── Update per-puff opacity ─────────────────────
-      puff.material.opacity = finalOpacity;
+      puff.mesh.lookAt(camPos);
     }
   }
 

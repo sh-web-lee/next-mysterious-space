@@ -10,7 +10,7 @@ const SKY_PARAMS = {
   opacity: 0.45,
   color: "#ece8e0",
   scale: 4.0,
-  count: 22,
+  count: 48,
 };
 
 // ── Cluster centres (airborne, scattered across the scene) ──
@@ -31,6 +31,31 @@ const CLUSTER_CENTERS = [
   { x: 9, y: 4.2, z: -6 },
   { x: -2, y: 5.8, z: -15 },
   { x: 4, y: 6.0, z: -2 },
+  // ── Extended coverage ──
+  { x: 14, y: 5.0, z: -18 },
+  { x: -14, y: 6.0, z: -16 },
+  { x: 12, y: 7.2, z: -20 },
+  { x: -12, y: 4.5, z: -1 },
+  { x: 16, y: 5.5, z: -10 },
+  { x: -16, y: 6.8, z: -12 },
+  { x: 0, y: 5.0, z: -22 },
+  { x: 7, y: 7.5, z: -25 },
+  { x: -9, y: 4.8, z: -20 },
+  { x: 3, y: 8.2, z: -17 },
+  { x: -5, y: 3.0, z: -24 },
+  { x: 18, y: 6.2, z: -6 },
+  { x: -18, y: 5.5, z: -8 },
+  // ── Positive Z coverage (behind / sides) ──
+  { x: 6, y: 5.5, z: 4 },
+  { x: -7, y: 6.0, z: 8 },
+  { x: 10, y: 4.8, z: 12 },
+  { x: -10, y: 7.0, z: 6 },
+  { x: 14, y: 5.2, z: 16 },
+  { x: -14, y: 6.5, z: 14 },
+  { x: 0, y: 4.0, z: 10 },
+  { x: 3, y: 7.5, z: 20 },
+  { x: -4, y: 5.0, z: 18 },
+  { x: 8, y: 6.8, z: 3 },
 ];
 
 interface PuffState {
@@ -76,7 +101,7 @@ class SkyClouds {
 
     const params = SKY_PARAMS;
     this.startTime = performance.now() / 1000;
-    this.driftRadius = params.scale * 3.0;
+    this.driftRadius = params.scale * 4.5;
 
     this.sharedMaterial = new MeshBasicMaterial({
       map: this.cloudTexture,
@@ -124,8 +149,8 @@ class SkyClouds {
     if (camera.instance) mesh.lookAt(camera.instance.position);
 
     // Random offset from cluster centre for natural look
-    const baseX = center.x + rand(-2, 2);
-    const baseZ = center.z + rand(-2, 2);
+    const baseX = center.x + rand(-3.5, 3.5);
+    const baseZ = center.z + rand(-3.5, 3.5);
     const baseY = center.y + rand(-1.5, 1.5);
 
     mesh.position.set(baseX, baseY, baseZ);
