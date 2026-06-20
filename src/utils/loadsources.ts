@@ -1,4 +1,9 @@
-import { EquirectangularReflectionMapping, SRGBColorSpace, Texture, TextureLoader } from "three";
+import {
+  EquirectangularReflectionMapping,
+  SRGBColorSpace,
+  Texture,
+  TextureLoader,
+} from "three";
 import { GLTF, GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 import { HDRLoader } from "three/examples/jsm/loaders/HDRLoader.js";
@@ -25,7 +30,9 @@ export class LoadSource extends EventEmitter<{
 
     // DRACO decoder for compressed models
     const dracoLoader = new DRACOLoader();
-    dracoLoader.setDecoderPath("https://www.gstatic.com/draco/versioned/decoders/1.5.5/");
+    dracoLoader.setDecoderPath(
+      "https://www.gstatic.com/draco/versioned/decoders/1.5.5/",
+    );
 
     const gltfLoader = new GLTFLoader();
     gltfLoader.setDRACOLoader(dracoLoader);
@@ -62,7 +69,6 @@ export class LoadSource extends EventEmitter<{
   sourceLoaded(item: SourceData, file: ResourceType) {
     this.items[item.name] = file;
     this.loaded++;
-    console.log(123, item.name);
     this.emit("progress", this.loaded / this.toLoad);
     if (this.loaded === this.toLoad) {
       this.isReady = true;
