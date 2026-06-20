@@ -10,11 +10,13 @@ const SKY_PARAMS = {
   opacity: 0.45,
   color: "#ece8e0",
   scale: 4.0,
-  count: 48,
+  count: 72,
 };
 
 // ── Cluster centres (airborne, scattered across the scene) ──
 const CLUSTER_CENTERS = [
+  { x: 1, y: 0.1, z: 1.1 },
+  { x: -1, y: 0.1, z: 1.1 },
   { x: 5, y: 5.5, z: -8 },
   { x: -6, y: 4.8, z: -10 },
   { x: 8, y: 6.2, z: -4 },
@@ -56,6 +58,20 @@ const CLUSTER_CENTERS = [
   { x: 3, y: 7.5, z: 20 },
   { x: -4, y: 5.0, z: 18 },
   { x: 8, y: 6.8, z: 3 },
+  // ── Dense cloud bank at camera start (breaking-through effect) ──
+  { x: 23, y: 11.5, z: -3 },
+  { x: 26, y: 12.5, z: 1 },
+  { x: 24, y: 13.0, z: 3 },
+  { x: 27, y: 11.8, z: -2 },
+  { x: 22, y: 12.0, z: 0 },
+  { x: 25, y: 12.8, z: 4 },
+  { x: 28, y: 12.2, z: 2 },
+  { x: 21, y: 11.5, z: -1 },
+  // ── Flight path (descending clouds for breakthrough transition) ──
+  { x: 19, y: 10.0, z: 2 },
+  { x: 15, y: 8.0, z: 1 },
+  { x: 11, y: 6.5, z: 0 },
+  { x: 7, y: 4.5, z: 2 },
 ];
 
 interface PuffState {
@@ -126,7 +142,8 @@ class SkyClouds {
 
     // Extra puffs to reach target count
     while (this.puffs.length < params.count) {
-      const extraCenter = CLUSTER_CENTERS[Math.floor(Math.random() * CLUSTER_CENTERS.length)];
+      const extraCenter =
+        CLUSTER_CENTERS[Math.floor(Math.random() * CLUSTER_CENTERS.length)];
       const puff = this.createPuff(extraCenter, params);
       sceneGroup.instance.add(puff.mesh);
       this.puffs.push(puff);
@@ -204,7 +221,13 @@ class SkyClouds {
       // ── Border fade ──
       let borderFade = 1.0;
       if (dist > this.driftRadius * 0.6) {
-        const t = Math.max(0, Math.min(1, (dist - this.driftRadius * 0.6) / (this.driftRadius * 0.4)));
+        const t = Math.max(
+          0,
+          Math.min(
+            1,
+            (dist - this.driftRadius * 0.6) / (this.driftRadius * 0.4),
+          ),
+        );
         borderFade = 1.0 - t * t * (3.0 - 2.0 * t);
       }
 
@@ -226,10 +249,14 @@ class SkyClouds {
 
       // ── Breathing opacity ──
       const breath =
-        Math.sin((elapsed / puff.breathPeriod) * Math.PI * 2 + puff.breathPhase) * 0.2;
+        Math.sin(
+          (elapsed / puff.breathPeriod) * Math.PI * 2 + puff.breathPhase,
+        ) * 0.2;
       const finalOpacity = Math.max(
         0.01,
-        (puff.baseOpacity + breath * puff.baseOpacity) * borderFade * params.opacity,
+        (puff.baseOpacity + breath * puff.baseOpacity) *
+          borderFade *
+          params.opacity,
       );
 
       // ── Slow roll ──

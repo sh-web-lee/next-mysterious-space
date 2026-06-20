@@ -15,9 +15,14 @@ class Camera {
   endPos: Vector3;
 
   constructor() {
-    this.instance = new PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 5000);
+    this.instance = new PerspectiveCamera(
+      45,
+      window.innerWidth / window.innerHeight,
+      0.01,
+      5000,
+    );
 
-    this.startPos = new Vector3(24.82, 12.2, -0.01);
+    this.startPos = new Vector3(29.24, 13.93, -0.85);
     this.endPos = new Vector3(0, 0.1, 3.55);
   }
 
@@ -48,7 +53,7 @@ class Camera {
         duration: 3.5,
         ease: "power1.inOut",
       },
-      0
+      0,
     );
   }
 

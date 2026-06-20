@@ -22,6 +22,7 @@ import type { WorldBtnConfig } from "./WorldButton";
 import { ButtomControl } from "./ButtomControl";
 import { OverlayModal } from "./OverlayModal";
 import { Cursor } from "./Cursor";
+import { DebugPanel } from "./DebugPanel";
 
 // Module-level guard for one-time init (survives HMR + Strict Mode remounts)
 let didInit = false;
@@ -116,6 +117,7 @@ export default function App() {
         style={{ opacity: 1 - loadingOpacity }}
       />
 
+      {process.env.NODE_ENV === "development" && <DebugPanel />}
       {/* Loading overlay — the ONLY visible element during load */}
       {loadingMounted && (
         <LoadingCanvas

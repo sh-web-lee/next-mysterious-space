@@ -46,6 +46,11 @@ export const sources = [
     path: "/texture/cloud.webp",
   },
   {
+    name: "cloud-layer-texture",
+    type: "texture",
+    path: "/texture/cloud-layer.webp",
+  },
+  {
     name: "scene-hdr",
     type: "hdr",
     path: "/hdr/scene.hdr",
