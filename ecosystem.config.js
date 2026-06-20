@@ -2,8 +2,8 @@ module.exports = {
   apps: [
     {
       name: "mysterious-space",
-      script: "node_modules/.bin/next",
-      args: "start -p 8080",
+      script: "npm",
+      args: "start",
       cwd: "./",
       instances: 1,
       exec_mode: "fork",
