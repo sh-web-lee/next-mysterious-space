@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 // File: E:\person\order\next-mysterious-space-main\src\app\page.tsx
+=======
+// File: E:\customer\next-mysterious-space\src\app\page.tsx
+>>>>>>> 5bc5a2ec518a4b80ac67ba5cd76d5dd874de9b41
 import * as entry from '../../../src/app/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
