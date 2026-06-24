@@ -4,6 +4,7 @@ import {
   RepeatWrapping,
   ShaderMaterial,
   Texture,
+  Vector3,
 } from "three";
 import { sceneGroup } from "@/three/core/group";
 import { loadSources } from "@/utils/loadsources";
@@ -13,6 +14,8 @@ import fragmentShader from "@/three/shaders/floor/fragment.glsl";
 
 class Floor {
   mesh: Mesh | null = null;
+  /** Dedicated Vector3 for the shader uniform — NOT a shared reference to camera.position. */
+  private cameraPosUniform = new Vector3();
 
   init() {
     const texture = loadSources.items["floor-texture"] as Texture;
@@ -32,7 +35,7 @@ class Floor {
     const material = new ShaderMaterial({
       uniforms: {
         uTexture: { value: texture },
-        uCameraPosition: { value: camera.instance!.position },
+        uCameraPosition: { value: this.cameraPosUniform },
       },
       vertexShader,
       fragmentShader,
@@ -41,10 +44,11 @@ class Floor {
     });
 
     this.mesh = new Mesh(geometry, material);
-    this.mesh.renderOrder = 0;
-    // Rotate to horizontal (XZ plane), slightly above y=0
+    this.mesh.renderOrder = -1; // Render before all other objects (paths=0, models=1, clouds=2)
+    // Rotate to horizontal (XZ plane), offset above y=0 to stay clear of the
+    // global clipping plane (y >= 0) on all GPU backends, especially macOS/Metal.
     this.mesh.rotation.x = -Math.PI / 2;
-    this.mesh.position.y = 0.0;
+    this.mesh.position.y = 0.01;
 
     sceneGroup.instance.add(this.mesh);
   }
@@ -52,8 +56,7 @@ class Floor {
   /** Keep the shader's camera-position uniform in sync (called each frame). */
   update() {
     if (!this.mesh || !camera.instance) return;
-    const mat = this.mesh.material as ShaderMaterial;
-    mat.uniforms.uCameraPosition.value.copy(camera.instance.position);
+    this.cameraPosUniform.copy(camera.instance.position);
   }
 
   destroy() {

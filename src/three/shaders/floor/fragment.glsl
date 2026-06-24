@@ -1,3 +1,5 @@
+precision highp float;
+
 uniform sampler2D uTexture;
 uniform vec3 uCameraPosition;
 varying vec3 vWorldPosition;
@@ -12,6 +14,17 @@ vec2 rotate2D(vec2 v, float angle) {
   float c = cos(angle);
   float s = sin(angle);
   return vec2(v.x * c - v.y * s, v.x * s + v.y * c);
+}
+
+// Sample texture with optional rotation and mirroring.
+// Replaces the old SAMPLE macro for better GPU compiler compatibility.
+// Uses float flags instead of bool for Apple Metal GLSL compiler compatibility.
+vec4 sampleTex(vec2 uv, float angle, float mx, float my) {
+  vec2 texUV = uv;
+  if (mx > 0.5) texUV.x = -texUV.x;
+  if (my > 0.5) texUV.y = -texUV.y;
+  texUV = rotate2D(texUV, angle);
+  return texture2D(uTexture, texUV);
 }
 
 void main() {
@@ -31,13 +44,10 @@ void main() {
   vec2 baseUV = vWorldPosition.xz * texScale;
 
   // Helper: quarter-turn step + jitter to break alignment even when rotations match
-  #define ANGLE(cell, seed) \
-    (floor(hash(cell + seed) * 4.0) * 1.570796 + (hash(cell - seed) - 0.5) * 0.35)
-
-  float a00 = ANGLE(macroCell, vec2(0.0, 0.0));
-  float a10 = ANGLE(macroCell, vec2(1.0, 0.0));
-  float a01 = ANGLE(macroCell, vec2(0.0, 1.0));
-  float a11 = ANGLE(macroCell, vec2(1.0, 1.0));
+  float a00 = floor(hash(macroCell + vec2(0.0, 0.0)) * 4.0) * 1.570796 + (hash(macroCell - vec2(0.0, 0.0)) - 0.5) * 0.35;
+  float a10 = floor(hash(macroCell + vec2(1.0, 0.0)) * 4.0) * 1.570796 + (hash(macroCell - vec2(1.0, 0.0)) - 0.5) * 0.35;
+  float a01 = floor(hash(macroCell + vec2(0.0, 1.0)) * 4.0) * 1.570796 + (hash(macroCell - vec2(0.0, 1.0)) - 0.5) * 0.35;
+  float a11 = floor(hash(macroCell + vec2(1.0, 1.0)) * 4.0) * 1.570796 + (hash(macroCell - vec2(1.0, 1.0)) - 0.5) * 0.35;
 
   // Per-cell mirror flags
   bool mx00 = hash(macroCell + vec2(0.5, 0.0)) > 0.5;
@@ -49,17 +59,10 @@ void main() {
   bool mx11 = hash(macroCell + vec2(1.5, 1.0)) > 0.5;
   bool my11 = hash(macroCell + vec2(1.0, 1.5)) > 0.5;
 
-  // Sample helper: rotate + optional mirror
-  #define SAMPLE(uv, angle, mx, my) \
-    (mx ? (my ? texture2D(uTexture, rotate2D(-uv, angle)) \
-              : texture2D(uTexture, rotate2D(vec2(-uv.x, uv.y), angle))) \
-        : (my ? texture2D(uTexture, rotate2D(vec2(uv.x, -uv.y), angle)) \
-              : texture2D(uTexture, rotate2D(uv, angle))))
-
-  vec4 s00 = SAMPLE(baseUV, a00, mx00, my00);
-  vec4 s10 = SAMPLE(baseUV, a10, mx10, my10);
-  vec4 s01 = SAMPLE(baseUV, a01, mx01, my01);
-  vec4 s11 = SAMPLE(baseUV, a11, mx11, my11);
+  vec4 s00 = sampleTex(baseUV, a00, mx00 ? 1.0 : 0.0, my00 ? 1.0 : 0.0);
+  vec4 s10 = sampleTex(baseUV, a10, mx10 ? 1.0 : 0.0, my10 ? 1.0 : 0.0);
+  vec4 s01 = sampleTex(baseUV, a01, mx01 ? 1.0 : 0.0, my01 ? 1.0 : 0.0);
+  vec4 s11 = sampleTex(baseUV, a11, mx11 ? 1.0 : 0.0, my11 ? 1.0 : 0.0);
 
   // Bilinear blend across macro-cell boundaries
   vec4 texColor = mix(mix(s00, s10, blend.x), mix(s01, s11, blend.x), blend.y);
@@ -82,10 +85,13 @@ void main() {
   // then fades to transparent so the actual HDR sky shows through.
   vec3 color = mix(texColor.rgb, atmosColor, fogFactor);
 
-  // Alpha fade: opaque near camera, transparent at horizon
+  // Alpha fade: opaque near camera, transparent at horizon.
+  // Use horizontal distance so the fade-out is uniform regardless of camera height,
+  // preventing a circular "sphere" illusion when looking down from above.
+  float horizDist = length(vWorldPosition.xz - uCameraPosition.xz);
   float alphaFadeStart = 40.0;
   float alphaFadeEnd   = 120.0;
-  float alpha = 1.0 - smoothstep(alphaFadeStart, alphaFadeEnd, dist);
+  float alpha = 1.0 - smoothstep(alphaFadeStart, alphaFadeEnd, horizDist);
 
   // Also apply the exponential fog to alpha for a softer falloff
   float alphaFog = 1.0 - smoothstep(0.0, 1.0, fogFactor * 1.2);

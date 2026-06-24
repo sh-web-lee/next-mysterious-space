@@ -48,12 +48,8 @@ export function AppHeader() {
 
   return (
     <header className="app-header">
-      <span className="app-header__title">ZGOODorDIE</span>
-      <VolumeIcon
-        playing={playing}
-        size={volumeSize}
-        onToggle={handleToggle}
-      />
+      <span className="app-header__title"></span>
+      <VolumeIcon playing={playing} size={volumeSize} onToggle={handleToggle} />
     </header>
   );
 }

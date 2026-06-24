@@ -1,3 +1,5 @@
+precision highp float;
+
 #include <clipping_planes_pars_fragment>
 
 varying vec2 vUv;
